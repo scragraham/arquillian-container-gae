@@ -94,7 +94,7 @@ public class AppScaleRemoteContainer extends AppEngineCommonContainer<AppScaleRe
         uploadDeploymentCmd.add(getAppLocation().getAbsolutePath());
         uploadDeploymentCmd.add("root@" + configuration.getHost() + ":/root/");
 
-        List<String> deployCmd = ssh("/usr/local/appscale-tools/bin/appscale-upload-app --email " + configuration.getEmail() + " --file /root/" + getAppLocation().getName() + " --keyname " + configuration.getKeyName());
+        List<String> deployCmd = ssh("/usr/local/bin/appscale-upload-app " + "--file /root/" + getAppLocation().getName() + " --keyname " + configuration.getKeyName());
 
         List<String> responses = new ArrayList<String>();
         try {
@@ -213,12 +213,20 @@ public class AppScaleRemoteContainer extends AppEngineCommonContainer<AppScaleRe
                 deploymentInfo.port = uri.getPort();
 
             }
+            // Appscale 3.0.0
             if (response.startsWith("Uploading")) {
                 /* Expected responses are:
-         * "Uploading new version of app {appName}"
+                 * "Uploading new version of app {appName}"
 		 * "Uploading initial version of app {appName}"
 		 */
                 deploymentInfo.appName = response.split("app ")[1];
+            }
+
+            // Appscale 3.5 -> master
+            // Deploying service <servcie> for <project id>
+            // where project id is the app id.
+            if (response.startsWith("Deploying service")) {
+                deploymentInfo.appName = response.split("for")[1];
             }
         }
         return deploymentInfo;
